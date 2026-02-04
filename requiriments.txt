@@ -1,0 +1,6 @@
+pandas
+streamlit
+selenium
+beautifulsoup4
+webdriver-manager
+sqlalchemy
