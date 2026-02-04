@@ -3,4 +3,4 @@ __pycache__/
 .DS_Store
 .env
 venv/
-/data/*.db  # Isso diz ao Git: "Ignore tudo que termina em .db dentro da pasta data"
+/data/*.db
