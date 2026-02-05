@@ -22,19 +22,8 @@ A organização segue padrões de Engenharia de Software aplicados a Dados:
 * `notebooks/`: Área para prototipagem e Análise Exploratória (EDA).
 * `.github/workflows/`: Scripts de automação do GitHub Actions.
 
-Rastreador de preços e oportunidades/
-│
-├── data/                  # Banco de dados SQLite
-├── src/
-│   ├── scraper.py         # Código do Selenium/BS4
-│   ├── database.py        # Funções para salvar no SQL
-│   └── app.py             # Código do Dashboard (Streamlit)
-├── .github/workflows/     # Automação do GitHub Actions
-├── requirements.txt       # Lista de bibliotecas
-└── README.md              # Explicação do projeto
-
 ## 🛠️ Tecnologias
 * **Linguagem:** Python
-* **Coleta:** Selenium, BeautifulSoup
+* **Coleta:** Request, BeautifulSoup
 * **Dados:** SQLite, Pandas, SQLAlchemy
 * **Frontend:** Streamlit
