@@ -1,0 +1,28 @@
+# Ambientes Virtuais
+venv/
+env/
+.venv/
+.env
+
+# Bases de Dados Locais (Obrigatório para este projeto)
+data/*.db
+*.sqlite3
+*.db
+
+# Ficheiros Compilados de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Configurações de IDEs (VS Code, PyCharm, etc.)
+.vscode/
+.idea/
+
+# Ficheiros de Sistema Operativo
+.DS_Store
+Thumbs.db
+
+# Cache do Streamlit e outras bibliotecas
+.streamlit/
+.pytest_cache/
