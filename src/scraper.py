@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+from database import setup_database, save_data
 
 def get_produto_data(url):
     """
@@ -51,22 +52,45 @@ def get_produto_data(url):
         return {
             "url" : url,
             "Produto" : title,
-            "preço" : price,
+            "preco" : price,
             "data_hora" : timestamp
         }
     except Exception as e:
         print(f"Erro ao processar a URL {url}: {e}")
 
 
-if __name__ == "__main__":
-    url_teste = "https://www.mercadolivre.com.br/base-suporte-para-pc-notebook-aluminio-portatil-articulado-dobravel-tablet-laptop-mesa-davely-cor-prateado/p/MLB27065699#polycard_client=recommendations_home-deals&reco_backend=deals-model-odin&wid=MLB5579047914&reco_client=home-deals&reco_item_pos=4&reco_backend_type=low_level&reco_id=3a0d6f65-bfec-4f3c-972d-eef41b544ca0&sid=recos&c_id=/home/promotions-recommendations/element&c_uid=84337cf2-aae5-428b-b5d0-f960121b5f93"
-    print("Iniciando a extração...")
+def run_piperline(urls):
+    """
+    Função que orquestra o pipeline de ETL:
+    garante a criação do banco, extrai os dados de cada URL e salva no SQLite.
+    """
+    # 1. Garante que o banco de dados e as tabelas estão prontos
+    setup_database()
 
-    dados = get_produto_data(url_teste)
-    if dados:
-        print("\n Extração conclúida com sucesso! ")
-        print(f"Produto: {dados['Produto']}")
-        print(f"Preço : R$ {dados['preço']}")
-        print(f"Data/Hora : {dados['data_hora']}")
-    else:
-        print("\n Falha na extração. ")
+    print("\n Iniciando a rotina de extração e salvamento... ")
+
+    # 2. Faz o loop (varre) pela lista de links
+    for url in urls:
+        print(f"\nExtraindo dados de: {url[:60]}...")
+
+        # cahma o scraper (Extração + Transformação)
+        dados = get_produto_data(url)
+
+        if dados:
+            # Chama o banco de dados (carga/load)
+            save_data(dados)
+        else:
+            print(f" Falha na extração. Pulando para o próximo.")
+    
+    print("\n Processo diário finalizado com sucesso !")
+
+# Bloco de execução principal
+if __name__ == "__main__":
+    # Lista de produtos que você quer monitorar
+    urls_para_monitorar = [
+        "https://www.mercadolivre.com.br/base-suporte-para-pc-notebook-aluminio-portatil-articulado-dobravel-tablet-laptop-mesa-davely-cor-prateado/p/MLB27065699#polycard_client=recommendations_home-deals&reco_backend=deals-model-odin&wid=MLB5579047914&reco_client=home-deals&reco_item_pos=4&reco_backend_type=low_level&reco_id=3a0d6f65-bfec-4f3c-972d-eef41b544ca0&sid=recos&c_id=/home/promotions-recommendations/element&c_uid=84337cf2-aae5-428b-b5d0-f960121b5f93",
+        "https://www.mercadolivre.com.br/suporte-ajustavel-hytalux-notebook-macbook-11-a-17-aluminio-dobravel/p/MLB59142517#polycard_client=recommendations_pdp-v2p&reco_backend=ranker_retrieval_online_vpp_v2p&reco_model=coldstart_low_exposition&reco_client=pdp-v2p&reco_item_pos=0&reco_backend_type=low_level&reco_id=cbea90fd-8671-4688-b743-69b24b2f66cd&wid=MLB5067374120&sid=recos"
+    ]
+
+    # Executa a função principal passando a lista de URLs
+    run_piperline(urls_para_monitorar)
