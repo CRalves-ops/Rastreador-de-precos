@@ -39,5 +39,5 @@ Para executar este projeto, você precisará do Python 3.9+ instalado e das segu
 
 **1. Clone o repositório:**
 ```bash
-git clone [https://github.com/SEU_USUARIO/mercado_livre_tracker.git](https://github.com/SEU_USUARIO/mercado_livre_tracker.git)
+git clone [https://github.com/CRalves-ops/Rastreador-de-precos](https://github.com/CRalves-ops/Rastreador-de-precos)
 cd mercado_livre_tracker
