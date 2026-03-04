@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+import time
 from database import setup_database, save_data
 
 def get_produto_data(url):
@@ -57,40 +58,71 @@ def get_produto_data(url):
         }
     except Exception as e:
         print(f"Erro ao processar a URL {url}: {e}")
+        return None
 
+def buscar_links_de_pesquisa(search_term, limite_itens = 50):
+    """
+    Pesquisa um termo no Mercado Livre e retorna uma lista com as URLs dos produtos encontrados.
+    """
+    term_formatted = search_term.replace(" ", '-')
+    url_pesquisa = f"https://lista.mercadolivre.com.br/{term_formatted}"
 
-def run_piperline(urls):
+    header = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
+
+    try:
+        response = requests.get(url_pesquisa, headers=header)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # O ML usa a classe 'ui-search-link' para os links dos produtos na página de busca
+        links_tags = soup.find_all('a', class_='poly-component__title')
+
+        urls_encontradas = []
+        for tag in links_tags:
+            href = tag.get('href')
+            # Evita adicionar links repetidos ou vazios
+            if href and href not in urls_encontradas:
+                urls_encontradas.append(href)
+                # Para de procurar se já atingiu o limite desejado
+                if len(urls_encontradas) >= limite_itens:
+                    break
+
+        return urls_encontradas        
+
+    except Exception as e:
+        print(f"Erro ao buscar o termo '{search_term}': {e}")
+        return []
+    
+def search_and_save(search_term, max_produtos=10):
     """
-    Função que orquestra o pipeline de ETL:
-    garante a criação do banco, extrai os dados de cada URL e salva no SQLite.
+    A função que orquestra tudo: Pega as URLs da busca e depois extrai cada página individualmente.
     """
-    # 1. Garante que o banco de dados e as tabelas estão prontos
     setup_database()
 
-    print("\n Iniciando a rotina de extração e salvamento... ")
+    print(f"\n Buscando links para: '{search_term}'...")
+    urls = buscar_links_de_pesquisa(search_term, limite_itens= max_produtos)
 
-    # 2. Faz o loop (varre) pela lista de links
-    for url in urls:
-        print(f"\nExtraindo dados de: {url[:60]}...")
+    if not urls:
+        print("Nenhum link encontrado. Cancelando extração.")
+        return
+    
+    print(f" Encontrados {len(urls)} produtos. Iniciando extração detalhada (página por página) ... ")
 
-        # cahma o scraper (Extração + Transformação)
+    for i, url in enumerate(urls):
+        print(f"\n[{i+1}/{len(urls)}] Lendo página do produto ...")
         dados = get_produto_data(url)
 
         if dados:
-            # Chama o banco de dados (carga/load)
             save_data(dados)
-        else:
-            print(f" Falha na extração. Pulando para o próximo.")
-    
-    print("\n Processo diário finalizado com sucesso !")
 
-# Bloco de execução principal
+        # Pausa amigável de 1 segundo para o Mercado Livre não bloquear nosso IP por excesso de requisições
+        time.sleep(1)
+
+    print("\n Processo de pesquisa e salvamento finalizado com sucesso!")
+
+# Bloco de execução principal (Apenas para testarmos se tudo funciona)
 if __name__ == "__main__":
-    # Lista de produtos que você quer monitorar
-    urls_para_monitorar = [
-        "https://www.mercadolivre.com.br/base-suporte-para-pc-notebook-aluminio-portatil-articulado-dobravel-tablet-laptop-mesa-davely-cor-prateado/p/MLB27065699#polycard_client=recommendations_home-deals&reco_backend=deals-model-odin&wid=MLB5579047914&reco_client=home-deals&reco_item_pos=4&reco_backend_type=low_level&reco_id=3a0d6f65-bfec-4f3c-972d-eef41b544ca0&sid=recos&c_id=/home/promotions-recommendations/element&c_uid=84337cf2-aae5-428b-b5d0-f960121b5f93",
-        "https://www.mercadolivre.com.br/suporte-ajustavel-hytalux-notebook-macbook-11-a-17-aluminio-dobravel/p/MLB59142517#polycard_client=recommendations_pdp-v2p&reco_backend=ranker_retrieval_online_vpp_v2p&reco_model=coldstart_low_exposition&reco_client=pdp-v2p&reco_item_pos=0&reco_backend_type=low_level&reco_id=cbea90fd-8671-4688-b743-69b24b2f66cd&wid=MLB5067374120&sid=recos"
-    ]
-
-    # Executa a função principal passando a lista de URLs
-    run_piperline(urls_para_monitorar)
+    # Vamos testar pesquisando por monitores e limitando a apenas 3 produtos para ser rápido
+    search_and_save("monitor gamer", max_produtos=3)
